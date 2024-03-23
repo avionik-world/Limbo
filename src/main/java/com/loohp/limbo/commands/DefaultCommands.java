@@ -21,18 +21,25 @@ package com.loohp.limbo.commands;
 
 import com.loohp.limbo.Console;
 import com.loohp.limbo.Limbo;
+import com.loohp.limbo.dependency.DependencyManager;
+import com.loohp.limbo.network.protocol.packets.PacketPlayOutPlayerAbilities;
 import com.loohp.limbo.player.Player;
+import com.loohp.limbo.plugins.LimboPlugin;
+import com.loohp.limbo.plugins.PluginManager;
 import com.loohp.limbo.utils.GameMode;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DefaultCommands implements CommandExecutor, TabCompletor {
-	
+
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (args.length == 0) {
@@ -70,7 +77,7 @@ public class DefaultCommands implements CommandExecutor, TabCompletor {
 			}
 			return;
 		}
-		
+
 		if (args[0].equalsIgnoreCase("stop")) {
 			if (sender.hasPermission("limboserver.stop")) {
 				Limbo.getInstance().stopServer();
@@ -79,7 +86,7 @@ public class DefaultCommands implements CommandExecutor, TabCompletor {
 			}
 			return;
 		}
-		
+
 		if (args[0].equalsIgnoreCase("kick")) {
 			if (sender.hasPermission("limboserver.kick")) {
 				Component reason = Component.translatable("multiplayer.disconnect.kicked");
@@ -109,7 +116,7 @@ public class DefaultCommands implements CommandExecutor, TabCompletor {
 			}
 			return;
 		}
-		
+
 		if (args[0].equalsIgnoreCase("gamemode")) {
 			if (sender.hasPermission("limboserver.gamemode")) {
 				if (args.length > 1) {
@@ -139,7 +146,7 @@ public class DefaultCommands implements CommandExecutor, TabCompletor {
 			}
 			return;
 		}
-		
+
 		if (args[0].equalsIgnoreCase("say")) {
 			if (sender.hasPermission("limboserver.say")) {
 				if (sender instanceof Console) {
@@ -180,8 +187,35 @@ public class DefaultCommands implements CommandExecutor, TabCompletor {
 			}
 			return;
 		}
+
+		if (args[0].equalsIgnoreCase("dependencies")) {
+			if (sender.hasPermission("limboserver.dependencies")) {
+				DependencyManager dependencyManager = Limbo.getInstance().getDependencyManager();
+				List<File> dependencyFiles = dependencyManager.getDependencyFiles();
+				sender.sendMessage("Dependencies (" + dependencyFiles.size() + "):");
+				sender.sendMessage(ChatColor.DARK_GRAY + "-" + ChatColor.GREEN + " " + dependencyFiles.stream()
+                        .map(file -> file.getName().replace(".jar", ""))
+                        .collect(Collectors.joining(ChatColor.WHITE + "," + ChatColor.GREEN + " ")));
+			} else {
+                sender.sendMessage(ChatColor.RED + "You do not have permission to use that command!");
+            }
+			return;
+		}
+
+		if (args[0].equalsIgnoreCase("plugins") || args[0].equalsIgnoreCase("pl")) {
+			if (sender.hasPermission("limboserver.plugins")) {
+				PluginManager pluginManager = Limbo.getInstance().getPluginManager();
+				List<LimboPlugin> limboPlugins = pluginManager.getPlugins();
+				sender.sendMessage("Plugins (" + limboPlugins.size() + "):");
+				sender.sendMessage(ChatColor.DARK_GRAY + "-" + ChatColor.GREEN + " " + limboPlugins.stream()
+						.map(LimboPlugin::getName)
+						.collect(Collectors.joining(ChatColor.WHITE + "," + ChatColor.GREEN + " ")));
+			} else {
+				sender.sendMessage(ChatColor.RED + "You do not have permission to use that command!");
+			}
+		}
 	}
-	
+
 	@Override
 	public List<String> tabComplete(CommandSender sender, String[] args) {
 		List<String> tab = new ArrayList<>();
@@ -201,6 +235,13 @@ public class DefaultCommands implements CommandExecutor, TabCompletor {
 			}
 			if (sender.hasPermission("limboserver.gamemode")) {
 				tab.add("gamemode");
+			}
+            if (sender.hasPermission("limboserver.dependencies")) {
+                tab.add("dependencies");
+            }
+			if (sender.hasPermission("limboserver.plugins")) {
+				tab.add("plugins");
+				tab.add("pl");
 			}
 			break;
 		case 1:
