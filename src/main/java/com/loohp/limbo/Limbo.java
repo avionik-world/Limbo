@@ -25,6 +25,7 @@ import com.loohp.limbo.bossbar.KeyedBossBar;
 import com.loohp.limbo.commands.CommandSender;
 import com.loohp.limbo.commands.DefaultCommands;
 import com.loohp.limbo.consolegui.GUI;
+import com.loohp.limbo.dependency.DependencyManager;
 import com.loohp.limbo.events.EventsManager;
 import com.loohp.limbo.file.ServerProperties;
 import com.loohp.limbo.inventory.AnvilInventory;
@@ -75,6 +76,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -170,8 +172,10 @@ public final class Limbo {
 	private final Metrics metrics;
 	
 	public final AtomicInteger entityIdCount = new AtomicInteger();
-	
-	@SuppressWarnings("deprecation")
+
+	private final DependencyManager dependencyManager = new DependencyManager();
+
+    @SuppressWarnings("deprecation")
 	private Unsafe unsafe;
 	
 	@SuppressWarnings("unchecked")
@@ -332,6 +336,10 @@ public final class Limbo {
             }
         }
 
+		for (File dependencyFile : dependencyManager.getDependencyFiles()) {
+			console.sendMessage("Loading dependency " + dependencyFile.getName());
+		}
+
         scheduler = new LimboScheduler();
 		tick = new Tick(this);
         
@@ -342,25 +350,29 @@ public final class Limbo {
         
         pluginFolder = new File("plugins");
         pluginFolder.mkdirs();
-		
-	    pluginManager = new PluginManager(new DefaultCommands(), pluginFolder);
-	    try {
-			Method loadPluginsMethod = PluginManager.class.getDeclaredMethod("loadPlugins");
-			loadPluginsMethod.setAccessible(true);
-			loadPluginsMethod.invoke(pluginManager);
-			loadPluginsMethod.setAccessible(false);
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
-		}
-		
-		for (LimboPlugin plugin : Limbo.getInstance().getPluginManager().getPlugins()) {
+
+		pluginManager = new PluginManager(new DefaultCommands(), pluginFolder);
+		Thread pluginThread = new Thread(() -> {
 			try {
-				console.sendMessage("Enabling plugin " + plugin.getName() + " " + plugin.getInfo().getVersion());
-				plugin.onEnable();
-			} catch (Throwable e) {
-				new RuntimeException("Error while enabling " + plugin.getName() + " " + plugin.getInfo().getVersion(), e).printStackTrace();
+				Method loadPluginsMethod = PluginManager.class.getDeclaredMethod("loadPlugins");
+				loadPluginsMethod.setAccessible(true);
+				loadPluginsMethod.invoke(pluginManager);
+				loadPluginsMethod.setAccessible(false);
+			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
 			}
-		}
+
+			for (LimboPlugin plugin : Limbo.getInstance().getPluginManager().getPlugins()) {
+				try {
+					console.sendMessage("Enabling plugin " + plugin.getName() + " " + plugin.getInfo().getVersion());
+					plugin.onEnable();
+				} catch (Throwable e) {
+					new RuntimeException("Error while enabling " + plugin.getName() + " " + plugin.getInfo().getVersion(), e).printStackTrace();
+				}
+			}
+		});
+        pluginThread.setContextClassLoader(new URLClassLoader(dependencyManager.getDependencyUrls().toArray(URL[]::new)));
+		pluginThread.start();
 		
 		server = new ServerConnection(properties.getServerIp(), properties.getServerPort());
 		
@@ -377,7 +389,11 @@ public final class Limbo {
 	public Unsafe getUnsafe() {
 		return unsafe;
 	}
-	
+
+	public DependencyManager getDependencyManager() {
+		return dependencyManager;
+	}
+
 	public Tick getHeartBeat() {
 		return tick;
 	}

@@ -74,7 +74,10 @@ public class PluginManager {
 								System.err.println("Ambiguous plugin name in " + file.getName() + " with the plugin \"" + plugins.get(pluginName).getClass().getName() + "\"");
 								break;
 							}
-							URLClassLoader child = new URLClassLoader(new URL[] {file.toURI().toURL()}, Limbo.getInstance().getClass().getClassLoader());
+							List<URL> dependencyUrls = Limbo.getInstance().getDependencyManager().getDependencyUrls();
+							URLClassLoader urlClassLoader = new URLClassLoader(dependencyUrls.toArray(new URL[0]), Limbo.getInstance().getClass().getClassLoader());
+
+							URLClassLoader child = new URLClassLoader(new URL[] {file.toURI().toURL()}, urlClassLoader);
 							Class<?> clazz = Class.forName(main, true, child);
 							LimboPlugin plugin = (LimboPlugin) clazz.getDeclaredConstructor().newInstance();
 							plugin.setInfo(pluginYaml, file);
