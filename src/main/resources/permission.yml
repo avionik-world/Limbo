@@ -4,11 +4,13 @@ groups:
     - limboserver.kick
     - limboserver.say
     - limboserver.gamemode
+    - limboserver.dependencies
+    - limboserver.plugins
   default:
     - limboserver.spawn
     - limboserver.chat
     - limboserver.version
 
 players:
-  LOOHP: 
+  MrManHD:
     - admin
