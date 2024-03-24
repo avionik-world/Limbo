@@ -24,7 +24,6 @@ import com.google.gson.GsonBuilder;
 import com.loohp.limbo.bossbar.KeyedBossBar;
 import com.loohp.limbo.commands.CommandSender;
 import com.loohp.limbo.commands.DefaultCommands;
-import com.loohp.limbo.consolegui.GUI;
 import com.loohp.limbo.dependency.DependencyManager;
 import com.loohp.limbo.events.EventsManager;
 import com.loohp.limbo.file.ServerProperties;
@@ -103,35 +102,8 @@ public final class Limbo {
 	public static final String LIMBO_BRAND = "Limbo";
 
 	private static Limbo instance;
-	public static boolean noGui = false;
 	
 	public static void main(String args[]) throws IOException, ParseException, NumberFormatException, ClassNotFoundException, InterruptedException {
-		for (String flag : args) {
-			if (flag.equals("--nogui") || flag.equals("nogui")) {
-				noGui = true;
-			} else if (flag.equals("--help")) {
-				System.out.println("Accepted flags:");
-				System.out.println(" --nogui <- Disable the GUI");
-				System.exit(0);
-			} else {
-				System.out.println("Unknown flag: \"" + flag + "\". Ignoring...");
-			}
-		}
-		if (GraphicsEnvironment.isHeadless()) {
-			noGui = true;
-		}
-		if (!noGui) {
-			System.out.println("Launching Server GUI.. Add \"--nogui\" in launch arguments to disable");
-			Thread t1 = new Thread(() -> {
-				try {
-					GUI.main();
-				} catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-					e.printStackTrace();
-				}
-			});
-			t1.start();
-		}
-		
 		new Limbo();
 	}
 	
@@ -183,16 +155,9 @@ public final class Limbo {
 		instance = this;
 		unsafe = new Unsafe(this);
 		isRunning = new AtomicBoolean(true);
-		
-		if (!noGui) {
-			while (!GUI.loadFinish) {
-				TimeUnit.MILLISECONDS.sleep(500);
-			}
-			console = new Console(null, System.out, System.err);
-		} else {
-			console = new Console(System.in, System.out, System.err);
-		}
-				
+
+		console = new Console(System.in, System.out, System.err);
+
 		LIMBO_IMPLEMENTATION_VERSION = getLimboVersion();
 		console.sendMessage("Loading Limbo Version " + LIMBO_IMPLEMENTATION_VERSION + " on Minecraft " + SERVER_IMPLEMENTATION_VERSION);
 		
