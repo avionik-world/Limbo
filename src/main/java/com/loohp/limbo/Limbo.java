@@ -48,7 +48,6 @@ import com.loohp.limbo.scheduler.Tick;
 import com.loohp.limbo.utils.CustomStringUtils;
 import com.loohp.limbo.utils.ImageUtils;
 import com.loohp.limbo.utils.NetworkUtils;
-import com.loohp.limbo.world.DimensionRegistry;
 import com.loohp.limbo.world.Environment;
 import com.loohp.limbo.world.Schematic;
 import com.loohp.limbo.world.World;
@@ -113,8 +112,8 @@ public final class Limbo {
 	
 	//===========================
 	
-	public final String SERVER_IMPLEMENTATION_VERSION = "1.20.4";
-	public final int SERVER_IMPLEMENTATION_PROTOCOL = 765;
+	public final String SERVER_IMPLEMENTATION_VERSION = "1.20.6";
+	public final int SERVER_IMPLEMENTATION_PROTOCOL = 766;
 	public final String LIMBO_IMPLEMENTATION_VERSION;
 	
 	private final AtomicBoolean isRunning;
@@ -133,8 +132,6 @@ public final class Limbo {
 	private final EventsManager eventsManager;
 	private final PermissionsManager permissionManager;
 	private final File pluginFolder;
-	
-	private final DimensionRegistry dimensionRegistry;
 	
 	private final Tick tick;
 	private final LimboScheduler scheduler;
@@ -265,8 +262,6 @@ public final class Limbo {
 		
 		console.sendMessage("Loaded all " + mappingsCount + " packet id mappings!");
 		
-		dimensionRegistry = new DimensionRegistry();
-		
 		worlds.add(loadDefaultWorld());
 		Location spawn = properties.getWorldSpawn();
 		properties.setWorldSpawn(new Location(getWorld(properties.getLevelName().value()), spawn.getX(), spawn.getY(), spawn.getZ(), spawn.getYaw(), spawn.getPitch()));
@@ -354,10 +349,6 @@ public final class Limbo {
 	
 	public LimboScheduler getScheduler() {
 		return scheduler;
-	}
-
-	public DimensionRegistry getDimensionRegistry() {
-		return dimensionRegistry;
 	}
 
 	public PermissionsManager getPermissionsManager() {
